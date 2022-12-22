@@ -26,13 +26,13 @@ def reslice_ras(nii, sz, interp="spline"):
     i_im0_corners = np.array(
         [
             [0, 0, 0, 1],
-            [nii.shape[0], 0, 0, 1],
-            [nii.shape[0], nii.shape[1], 0, 1],
-            [0, nii.shape[1], 0, 1],
-            [0, 0, nii.shape[2], 1],
-            [nii.shape[0], 0, nii.shape[2], 1],
-            [nii.shape[0], nii.shape[1], nii.shape[2], 1],
-            [0, nii.shape[1], nii.shape[2], 1],
+            [nii.shape[0] - 1, 0, 0, 1],
+            [nii.shape[0] - 1, nii.shape[1] - 1, 0, 1],
+            [0, nii.shape[1] - 1, 0, 1],
+            [0, 0, nii.shape[2] - 1, 1],
+            [nii.shape[0] - 1, 0, nii.shape[2] - 1, 1],
+            [nii.shape[0] - 1, nii.shape[1] - 1, nii.shape[2] - 1, 1],
+            [0, nii.shape[1] - 1, nii.shape[2] - 1, 1],
         ]
     ).T
     w_im0_corners = nii.affine @ i_im0_corners
