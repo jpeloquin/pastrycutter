@@ -116,7 +116,7 @@ def reslice_ras(nii, sz, interp="spline", affine=np.eye(4)):
     x_im0_corners = x_aff_w @ w_im0_corners
     x_im0_bbmax = np.max(x_im0_corners, axis=1)[:3]
     x_im0_bbmin = np.min(x_im0_corners, axis=1)[:3]
-    im1_shape = np.ceil((x_im0_bbmax - x_im0_bbmin) / sz).astype(int)
+    im1_shape = (np.ceil(x_im0_bbmax - x_im0_bbmin) / sz).astype(int)
     i_im0 = np.vstack(
         [np.reshape(np.indices(nii.shape), (3, -1)), np.ones([1, np.prod(nii.shape)])]
     )
