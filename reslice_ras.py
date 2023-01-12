@@ -54,9 +54,9 @@ def read_itk_transform_txt(pth):
     # nifti_affine = ras_A_lps @ itk_affine @ ras_A_lps.T
     nifti_affine = np.array(
         [
-            [p[0], p[1], -p[2], -p[11]],
+            [p[0], p[1], -p[2], -p[9]],
             [p[3], p[4], -p[5], -p[10]],
-            [-p[6], -p[7], p[8], p[9]],
+            [-p[6], -p[7], p[8], p[11]],
             [0, 0, 0, 1],
         ]
     )
