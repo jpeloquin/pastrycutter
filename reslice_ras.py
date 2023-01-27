@@ -7,9 +7,6 @@ import nibabel as nib
 import numpy as np
 from scipy.ndimage.interpolation import map_coordinates
 
-# Debugging aids:
-# np.set_printoptions(suppress=True, precision=3)
-
 
 def read_itk_transform_txt(pth):
     """Read an Insight Transform File V1.0 text file
@@ -45,9 +42,9 @@ def read_itk_transform_txt(pth):
     #                       [0, 0, 0, 1]])
     # itk_affine = np.array(
     #     [
-    #         [p[0], p[1], p[2], p[11]],
+    #         [p[0], p[1], p[2], p[9]],
     #         [p[3], p[4], p[5], p[10]],
-    #         [p[6], p[7], p[8], p[9]],
+    #         [p[6], p[7], p[8], p[11]],
     #         [0, 0, 0, 1],
     #     ]
     # )
@@ -61,9 +58,6 @@ def read_itk_transform_txt(pth):
         ]
     )
     return nifti_affine
-
-
-# x translations are handled correctly when the rotation is about x
 
 
 def reslice_ras(nii, sz, interp="spline", affine=np.eye(4)):
@@ -131,7 +125,7 @@ def reslice_ras(nii, sz, interp="spline", affine=np.eye(4)):
     )
     # Define the voxel → physical transform for the output image.  The affine will
     # always be a scaling matrix, since by design the output image's voxel grid is
-    # supposed to be parellel to the anatomic axes.  Since the trasnform between the
+    # supposed to be parallel to the anatomic axes.  Since the transform between the
     # input image's physical coordinates and the output image's physical coordinates is
     # fully determined elsewhere (as a function parameter), the offset determines the
     # viewport that the output image has over the input image.  We choose to make the
