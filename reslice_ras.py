@@ -102,6 +102,9 @@ def reslice_ras(nii, sz, interp="spline", affine=np.eye(4)):
         order=order,
     )
     resliced = nib.Nifti1Image(im1, x_aff_j)
+    # Have to set qform_code > 0 for full sform to be used (method 2)
+    # https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html/document_view
+    resliced.header["qform_code"] = 2
     return resliced
 
 
