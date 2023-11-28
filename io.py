@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pandas as pd
 
@@ -20,6 +22,17 @@ def read_fcsv(infile):
     df["x"] = -df["x"]
     df["y"] = -df["y"]
     return df
+
+
+def read_landmark_json(pth):
+    """Return landmark coordinates (RAS+) from Slicer JSON markups (.mrk.json) file"""
+    with open(pth, "rb") as f:
+        data = json.loads(f.read())
+    orient = np.array(data["markups"][0]["controlPoints"][0]["orientation"]).reshape(
+        3, 3
+    )
+    x = np.array(data["markups"][0]["controlPoints"][0]["position"]) @ orient
+    return x
 
 
 def read_itk_transform_txt(pth):
