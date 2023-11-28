@@ -28,11 +28,20 @@ def read_landmark_json(pth):
     """Return landmark coordinates (RAS+) from Slicer JSON markups (.mrk.json) file"""
     with open(pth, "rb") as f:
         data = json.loads(f.read())
-    orient = np.array(data["markups"][0]["controlPoints"][0]["orientation"]).reshape(
-        3, 3
-    )
-    x = np.array(data["markups"][0]["controlPoints"][0]["position"]) @ orient
-    return x
+    if len(data["markups"]) > 1:
+        raise NotImplementedError("Multiple markups sections not yet supported.")
+    out = {"x": [],
+            "y": [],
+            "z": [],
+            "label": []}
+    for pt_info in data["markups"][0]["controlPoints"]:
+        orient = np.array(pt_info["orientation"]).reshape(3, 3)
+        x = np.array(pt_info["position"]) @ orient
+        out["x"].append(x[0])
+        out["y"].append(x[1])
+        out["z"].append(x[2])
+        out["label"].append(pt_info["label"])
+    return pd.DataFrame(out)
 
 
 def read_itk_transform_txt(pth):
