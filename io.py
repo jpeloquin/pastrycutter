@@ -1,4 +1,25 @@
 import numpy as np
+import pandas as pd
+
+
+def read_fcsv(infile):
+    """Return DataFrame from Slicer .fcsv"""
+    # Markups fiducial file version = 5.2 has two extra unlabled columns, so we can't
+    # use the header row directly.
+
+    # Get column names
+    with open(infile, "r") as f:
+        for i in range(3):
+            ln = f.readline()
+    colnames = ln.removeprefix("# columns = ").split(",")
+    # Read data
+    df = pd.read_csv(infile, skiprows=3, index_col=None, header=None)
+    df = df[[i for i in range(len(colnames))]]
+    df.columns = colnames
+    # Switch from LPS to RAS
+    df["x"] = -df["x"]
+    df["y"] = -df["y"]
+    return df
 
 
 def read_itk_transform_txt(pth):
