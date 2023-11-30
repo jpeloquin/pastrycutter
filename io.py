@@ -1,7 +1,75 @@
 import json
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
+from numpy._typing import NDArray
+from pandas import DataFrame
+from scipy.io import loadmat, savemat
+
+
+def read_affine(pth: Union[str, Path]):
+    """Read ANTs affine in RAS coords
+
+    ANTs uses LPS+; the returned affine is in RAS+.
+
+    """
+    ants_affine = loadmat(pth)
+    if "AffineTransform_double_3_3" in ants_affine:
+        return read_affine_3d(pth)
+    elif "AffineTransform_double_2_2" in ants_affine:
+        return read_affine_2d(pth)
+    else:
+        raise NotImplementedError(f"Affine transform format not supported.")
+
+
+def read_affine_2d(pth: Union[str, Path]):
+    """Read 2D ANTs affine
+
+    ANTs uses LPS+, but that doesn't mean anything in 2D, so the coordinates are
+    passed through as-is.
+
+    """
+    ants_affine = loadmat(pth)
+    a = ants_affine["AffineTransform_double_2_2"]
+    # fmt: off
+    affine = np.array(
+        [[a[0][0], a[1][0], a[-2][0]],
+         [a[2][0], a[3][0], a[-1][0]],
+         [0, 0, 1]]
+    )
+    # fmt: on
+    return affine
+
+
+def read_affine_3d(pth: Union[str, Path]):
+    """Read 3D ANTs affine in RAS coords
+
+    ANTs uses LPS+; the returned affine is in RAS+.
+
+    """
+    ants_affine = loadmat(pth)
+    a = ants_affine["AffineTransform_double_3_3"]
+    # fmt: off
+    affine = np.array([
+         [a[0][0], -a[1][0], -a[2][0], -a[-3][0]],
+         [a[3][0], a[4][0], -a[5][0], -a[-2][0]],
+         [-a[6][0], -a[7][0], a[8][0], a[-1][0]],
+         [0, 0, 0, 1],
+    ])
+    # fmt: on
+    return affine
+
+
+def write_affine(affine: NDArray, pth: Union[str, Path]):
+    dim = affine.shape[0] - 1
+    serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
+    mat = {
+        f"AffineTransform_double_{dim}_{dim}": np.atleast_2d(serialized).T,
+        "fixed": np.zeros((affine.shape[0] - 1, 1)),
+    }
+    savemat(pth, mat, format="4")  # ANTs requires format 4
 
 
 def read_fcsv(infile):
@@ -30,10 +98,7 @@ def read_landmark_json(pth):
         data = json.loads(f.read())
     if len(data["markups"]) > 1:
         raise NotImplementedError("Multiple markups sections not yet supported.")
-    out = {"x": [],
-            "y": [],
-            "z": [],
-            "label": []}
+    out = {"x": [], "y": [], "z": [], "label": []}
     for pt_info in data["markups"][0]["controlPoints"]:
         orient = np.array(pt_info["orientation"]).reshape(3, 3)
         x = np.array(pt_info["position"]) @ orient
@@ -94,6 +159,58 @@ def read_itk_transform_txt(pth):
         ]
     )
     return nifti_affine
+
+
+def write_fcsv(markers: DataFrame, pth):
+    """Write fiducial markers to Slicer .fcsv file
+
+    :param markers: DataFrame with required columns "x", "y", and "z" and optional
+    columns "label".  RAS (mm) coordinates assumed.  Slicer uses LPS and the
+    coordinates will be converted accordingly..
+
+    """
+    columns = [
+        "id",
+        "x",
+        "y",
+        "z",
+        "ow",
+        "ox",
+        "oy",
+        "oz",
+        "vis",
+        "sel",
+        "lock",
+        "label",
+        "desc",
+        "associatedNodeID",
+    ]
+    markers = markers.reset_index().copy()
+    markers["id"] = markers.index + 1
+    markers["x"] = -markers["x"]
+    markers["y"] = -markers["y"]
+    markers["ow"] = 0
+    markers["ox"] = 0
+    markers["oy"] = 0
+    markers["oz"] = 1
+    markers["vis"] = 1
+    markers["sel"] = 1
+    markers["lock"] = 0
+    if "label" not in markers:
+        markers["label"] = [str(i + 1) for i in markers.index]
+    markers["desc"] = ""
+    markers["associatedNodeID"] = None
+    markers["extra1"] = 2
+    markers["extra2"] = 0
+    with open(pth, "w") as f:
+        f.writelines(
+            [
+                "# Markups fiducial file version = 5.4\n",
+                "# CoordinateSystem = LPS\n",
+                f"# columns = {','.join(columns)}\n",
+            ]
+        )
+        markers[columns + ["extra1", "extra2"]].to_csv(f, header=False, index=False)
 
 
 def write_itk_transform_txt(affine, pth):
