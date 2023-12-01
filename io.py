@@ -9,7 +9,7 @@ from pandas import DataFrame
 from scipy.io import loadmat, savemat
 
 
-def read_affine(pth: Union[str, Path]):
+def read_affine_mat(pth: Union[str, Path]):
     """Read ANTs affine in RAS coords
 
     ANTs uses LPS+; the returned affine is in RAS+.
@@ -17,14 +17,14 @@ def read_affine(pth: Union[str, Path]):
     """
     ants_affine = loadmat(pth)
     if "AffineTransform_double_3_3" in ants_affine:
-        return read_affine_3d(pth)
+        return read_affine_mat_3d(pth)
     elif "AffineTransform_double_2_2" in ants_affine:
-        return read_affine_2d(pth)
+        return read_affine_mat_2d(pth)
     else:
         raise NotImplementedError(f"Affine transform format not supported.")
 
 
-def read_affine_2d(pth: Union[str, Path]):
+def read_affine_mat_2d(pth: Union[str, Path]):
     """Read 2D ANTs affine
 
     ANTs uses LPS+, but that doesn't mean anything in 2D, so the coordinates are
@@ -43,7 +43,7 @@ def read_affine_2d(pth: Union[str, Path]):
     return affine
 
 
-def read_affine_3d(pth: Union[str, Path]):
+def read_affine_mat_3d(pth: Union[str, Path]):
     """Read 3D ANTs affine in RAS coords
 
     ANTs uses LPS+; the returned affine is in RAS+.
@@ -60,16 +60,6 @@ def read_affine_3d(pth: Union[str, Path]):
     ])
     # fmt: on
     return affine
-
-
-def write_affine(affine: NDArray, pth: Union[str, Path]):
-    dim = affine.shape[0] - 1
-    serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
-    mat = {
-        f"AffineTransform_double_{dim}_{dim}": np.atleast_2d(serialized).T,
-        "fixed": np.zeros((affine.shape[0] - 1, 1)),
-    }
-    savemat(pth, mat, format="4")  # ANTs requires format 4
 
 
 def read_fcsv(infile):
@@ -211,6 +201,16 @@ def write_fcsv(markers: DataFrame, pth):
             ]
         )
         markers[columns + ["extra1", "extra2"]].to_csv(f, header=False, index=False)
+
+
+def write_affine_mat(affine: NDArray, pth: Union[str, Path]):
+    dim = affine.shape[0] - 1
+    serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
+    mat = {
+        f"AffineTransform_double_{dim}_{dim}": np.atleast_2d(serialized).T,
+        "fixed": np.zeros((affine.shape[0] - 1, 1)),
+    }
+    savemat(pth, mat, format="4")  # ANTs requires format 4
 
 
 def write_itk_transform_txt(affine, pth):
