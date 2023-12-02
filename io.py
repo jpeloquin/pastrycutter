@@ -139,8 +139,19 @@ def read_itk_transform_txt(pth):
     #         [0, 0, 0, 1],
     #     ]
     # )
-    # nifti_affine = ras_A_lps @ itk_affine @ ras_A_lps.T
-    nifti_affine = np.array(
+    # A = ras_A_lps @ itk_affine @ ras_A_lps.T
+    # Have to apply rotations for center of rotation offset in LPS+ coords
+    R_lps = np.array(
+        [
+            [p[0], p[1], p[2]],
+            [p[3], p[4], p[5]],
+            [-p[6], -p[7], p[8]],
+        ]
+    )
+    cor_delta = fixed - R_lps @ fixed
+    cor_delta[0:2] = -cor_delta[0:2]
+    # Construct the RAS+ affine
+    A = np.array(
         [
             [p[0], p[1], -p[2], -p[9]],
             [p[3], p[4], -p[5], -p[10]],
@@ -148,7 +159,8 @@ def read_itk_transform_txt(pth):
             [0, 0, 0, 1],
         ]
     )
-    return nifti_affine
+    A[:3, -1] = A[:3, -1] + cor_delta
+    return A
 
 
 def write_fcsv(markers: DataFrame, pth):
