@@ -1,3 +1,4 @@
+from copy import copy
 import json
 from pathlib import Path
 from typing import Union
@@ -7,6 +8,15 @@ import pandas as pd
 from numpy._typing import NDArray
 from pandas import DataFrame
 from scipy.io import loadmat, savemat
+
+
+def _affine_with_cor(A, cor):
+    """Update affine matrix with center of rotation"""
+    A = copy(A)
+    R = A[:3, :3]
+    cor_Δ = cor - R @ cor
+    A[:3, -1] = A[:3, -1] + cor_Δ
+    return A
 
 
 def read_affine_mat(pth: Union[str, Path]):
