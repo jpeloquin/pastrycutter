@@ -10,8 +10,63 @@ from pandas import DataFrame
 from scipy.io import loadmat, savemat
 
 
+def _affine_from_itk(p, cor=None):
+    """Return affine matrix from ITK parameters list
+
+    :param p: List-like of parameters, 12 values.  The first 9 define the upper left
+    3×3 part of the affine matrix and the last 3 define the translation vector.
+
+    :param cor: Center of rotation, 3 values.
+
+
+    """
+    A = np.array(
+        [
+            [p[0], p[1], p[2], p[9]],
+            [p[3], p[4], p[5], p[10]],
+            [p[6], p[7], p[8], p[11]],
+            [0, 0, 0, 1],
+        ]
+    )
+    if cor is not None:
+        return _affine_with_cor(A, cor)
+
+
+def _affine_ras_from_lps(A):
+    """Convert LPS+ affine to RAS+"""
+    # Slower but clearer way to convert LPS → RAS:
+    #
+    # ras_A_lps = np.array([[-1, 0, 0, 0],
+    #                       [0, -1, 0, 0],
+    #                       [0, 0, 1, 0],
+    #                       [0, 0, 0, 1]])
+    # itk_affine = np.array(
+    #     [
+    #         [p[0], p[1], p[2], p[9]],
+    #         [p[3], p[4], p[5], p[10]],
+    #         [p[6], p[7], p[8], p[11]],
+    #         [0, 0, 0, 1],
+    #     ]
+    # )
+    # A = ras_A_lps @ itk_affine @ ras_A_lps.T
+    return np.array(
+        [
+            [A[0, 0], A[0, 1], -A[0, 2], -A[0, 3]],
+            [A[1, 0], A[1, 1], -A[1, 2], -A[1, 3]],
+            [-A[2, 0], -A[2, 1], A[2, 2], A[2, 3]],
+            [0, 0, 0, 1],
+        ]
+    )
+
+
 def _affine_with_cor(A, cor):
-    """Update affine matrix with center of rotation"""
+    """Update affine matrix with center of rotation
+
+    :param A: 4×4 affine matrix (augmented form).
+
+    :param cor: Center of rotation, 3 values.
+
+    """
     A = copy(A)
     R = A[:3, :3]
     cor_Δ = cor - R @ cor
@@ -59,17 +114,12 @@ def read_affine_mat_3d(pth: Union[str, Path]):
     ANTs uses LPS+; the returned affine is in RAS+.
 
     """
-    ants_affine = loadmat(pth)
-    a = ants_affine["AffineTransform_double_3_3"]
-    # fmt: off
-    affine = np.array([
-         [a[0][0], a[1][0], -a[2][0], -a[-3][0]],
-         [a[3][0], a[4][0], -a[5][0], -a[-2][0]],
-         [-a[6][0], -a[7][0], a[8][0], a[-1][0]],
-         [0, 0, 0, 1],
-    ])
-    # fmt: on
-    return affine
+    data = loadmat(pth)
+    p = data["AffineTransform_double_3_3"][:, 0]
+    c = data["fixed"][:, 0]
+    A = _affine_from_itk(p, c)
+    A = _affine_ras_from_lps(A)
+    return A
 
 
 def read_fcsv(infile):
@@ -135,41 +185,8 @@ def read_itk_transform_txt(pth):
             float(v)
             for v in f.readline().removeprefix("FixedParameters: ").rstrip().split()
         ]
-    # Slower but clearer way:
-    #
-    # ras_A_lps = np.array([[-1, 0, 0, 0],
-    #                       [0, -1, 0, 0],
-    #                       [0, 0, 1, 0],
-    #                       [0, 0, 0, 1]])
-    # itk_affine = np.array(
-    #     [
-    #         [p[0], p[1], p[2], p[9]],
-    #         [p[3], p[4], p[5], p[10]],
-    #         [p[6], p[7], p[8], p[11]],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
-    # A = ras_A_lps @ itk_affine @ ras_A_lps.T
-    # Have to apply rotations for center of rotation offset in LPS+ coords
-    R_lps = np.array(
-        [
-            [p[0], p[1], p[2]],
-            [p[3], p[4], p[5]],
-            [-p[6], -p[7], p[8]],
-        ]
-    )
-    cor_delta = fixed - R_lps @ fixed
-    cor_delta[0:2] = -cor_delta[0:2]
-    # Construct the RAS+ affine
-    A = np.array(
-        [
-            [p[0], p[1], -p[2], -p[9]],
-            [p[3], p[4], -p[5], -p[10]],
-            [-p[6], -p[7], p[8], p[11]],
-            [0, 0, 0, 1],
-        ]
-    )
-    A[:3, -1] = A[:3, -1] + cor_delta
+    A = _affine_from_itk(p, fixed)
+    A = _affine_ras_from_lps(A)
     return A
 
 

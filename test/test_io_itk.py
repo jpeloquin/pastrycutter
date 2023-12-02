@@ -2,22 +2,11 @@ import ants
 import numpy as np
 import numpy.testing as npt
 
-from pastrycutter.io import _affine_with_cor
+from pastrycutter.io import _affine_from_itk_params, _affine_with_cor
 
 
 def _apply_affine(A, pt):
     return (A @ np.concatenate([pt, [1]]))[:3]
-
-
-def _affine_from_params(p):
-    return np.array(
-        [
-            [p[0], p[1], p[2], p[9]],
-            [p[3], p[4], p[5], p[10]],
-            [p[6], p[7], p[8], p[11]],
-            [0, 0, 0, 1],
-        ]
-    )
 
 
 def test_xrot():
@@ -36,7 +25,7 @@ def test_xrot():
         7,
         9,
     ]
-    A = _affine_from_params(p)
+    A = _affine_from_itk_params(p)
     for c in ([10, 0, 0], [0, 10, 0], [0, 0, 10]):
         B = _affine_with_cor(A, c)
         t = ants.create_ants_transform(parameters=p, fixed_parameters=c)
@@ -62,7 +51,7 @@ def test_yrot():
         7,
         9,
     ]
-    A = _affine_from_params(p)
+    A = _affine_from_itk_params(p)
     for c in ([10, 0, 0], [0, 10, 0], [0, 0, 10]):
         B = _affine_with_cor(A, c)
         t = ants.create_ants_transform(parameters=p, fixed_parameters=c)
@@ -88,7 +77,7 @@ def test_zrot():
         7,
         9,
     ]
-    A = _affine_from_params(p)
+    A = _affine_from_itk_params(p)
     for c in ([10, 0, 0], [0, 10, 0], [0, 0, 10]):
         B = _affine_with_cor(A, c)
         t = ants.create_ants_transform(parameters=p, fixed_parameters=c)
@@ -113,7 +102,7 @@ def test_combined():
         17.391967218157433,
         13.352369341586469,
     ]
-    A = _affine_from_params(p)
+    A = _affine_from_itk_params(p)
     for c in ([10, 0, 0], [0, 10, 0], [0, 0, 10]):
         B = _affine_with_cor(A, c)
         t = ants.create_ants_transform(parameters=p, fixed_parameters=c)
