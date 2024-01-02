@@ -5,6 +5,7 @@ module provides some supplemental utilities.
 
 """
 import os
+import psutil
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
 
