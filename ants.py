@@ -48,6 +48,7 @@ def env_ants(threads=None):
 
 
 def run_ants(cmd, cwd, pth_log, threads=None):
+    output = []
     with Popen(
         cmd,
         stdout=PIPE,
@@ -60,12 +61,14 @@ def run_ants(cmd, cwd, pth_log, threads=None):
         for ln in p.stdout:
             logfile.write(ln)
             logfile.flush()
+            output.append(ln)
     p.stdout.close()
     returncode = p.wait()
     if returncode != 0:
         raise CalledProcessError(
+            returncode,
             cmd,
-            "antsRegistration failed with return code {returncode}",
+            "".join(output),
         )
     # Check ANTs log for exceptions; sometimes ANTs returns 0 even with an error
     error = check_ants_log(pth_log)
