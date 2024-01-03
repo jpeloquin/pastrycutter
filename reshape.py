@@ -39,6 +39,8 @@ def crop_to_bb_mm(nii: Nifti1Image, bb):
 def crop_to_bb_px(nii: Nifti1Image, bb):
     """Crop a NIfTI image to a pixel grid bounding box
 
+    :param nii: Image to crop.
+
     :param bb: Array of (min, max) integer pixel positions in order of i, j,
     k specifying the bounding box for the crop.
 
