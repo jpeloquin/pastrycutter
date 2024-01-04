@@ -32,8 +32,8 @@ def _affine_from_itk(p, cor=None):
         return _affine_with_cor(A, cor)
 
 
-def _affine_ras_from_lps(A):
-    """Convert LPS+ affine to RAS+"""
+def _affine_convert_ras_lps(A):
+    """Convert LPS+ affine to RAS+ or vice versa"""
     # Slower but clearer way to convert LPS → RAS:
     #
     # ras_A_lps = np.array([[-1, 0, 0, 0],
@@ -118,7 +118,7 @@ def read_affine_mat_3d(pth: Union[str, Path]):
     p = data["AffineTransform_double_3_3"][:, 0]
     c = data["fixed"][:, 0]
     A = _affine_from_itk(p, c)
-    A = _affine_ras_from_lps(A)
+    A = _affine_convert_ras_lps(A)
     return A
 
 
@@ -186,7 +186,7 @@ def read_itk_transform_txt(pth):
             for v in f.readline().removeprefix("FixedParameters: ").rstrip().split()
         ]
     A = _affine_from_itk(p, fixed)
-    A = _affine_ras_from_lps(A)
+    A = _affine_convert_ras_lps(A)
     return A
 
 
@@ -242,18 +242,25 @@ def write_fcsv(markers: DataFrame, pth):
         markers[columns + ["extra1", "extra2"]].to_csv(f, header=False, index=False)
 
 
-def write_affine_mat(affine: NDArray, pth: Union[str, Path]):
+def write_itk_affine_mat(affine: NDArray, pth: Union[str, Path]):
+    """Write an RAS+ affine transform to an ITK-compatible .mat file
+
+    Since ITK uses LPS+, the input affine is converted to LPS+ coordinates before
+    being written to the output file.
+
+    """
     dim = affine.shape[0] - 1
-    serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
+    A = _affine_convert_ras_lps(affine)
+    serialized = np.hstack([A[:-1, :-1].ravel(), A[:-1, -1]])
     mat = {
         f"AffineTransform_double_{dim}_{dim}": np.atleast_2d(serialized).T,
-        "fixed": np.zeros((affine.shape[0] - 1, 1)),
+        "fixed": np.zeros((A.shape[0] - 1, 1)),
     }
     savemat(pth, mat, format="4")  # ANTs requires format 4
 
 
-def write_itk_transform_txt(affine, pth):
-    """Write an augmented affine matrix to an Insight Transform File V1.0 text file
+def write_itk_affine_txt(affine, pth):
+    """Write an RAS+ affine transform to an Insight Transform File V1.0 text file
 
     :param affine: 4x4 augmented affine matrix in RAS+ coordinates
 
