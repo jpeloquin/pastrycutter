@@ -80,6 +80,7 @@ def read_affine_mat(pth: Union[str, Path]):
     ANTs uses LPS+; the returned affine is in RAS+.
 
     """
+    pth = str(pth)
     ants_affine = loadmat(pth)
     if "AffineTransform_double_3_3" in ants_affine:
         return read_affine_mat_3d(pth)
