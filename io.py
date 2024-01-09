@@ -195,8 +195,9 @@ def write_fcsv(markers: DataFrame, pth):
     """Write fiducial markers to Slicer .fcsv file
 
     :param markers: DataFrame with required columns "x", "y", and "z" and optional
-    columns "label".  RAS (mm) coordinates assumed.  Slicer uses LPS and the
-    coordinates will be converted accordingly..
+    columns "label".  Slicer uses LPS and the coordinates will be converted accordingly.
+
+    Returns RAS+ coordinates.
 
     """
     columns = [
