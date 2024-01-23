@@ -167,6 +167,10 @@ def read_itk_transform_txt(pth):
     Note that ITK uses LPS+ so this requires conversion.
 
     """
+    supported_transforms = (
+        "MatrixOffsetTransformBase_double_3_3",
+        "AffineTransform_double_3_3",
+    )
     with open(pth, "r") as f:
         fmt = f.readline().lstrip("#").rstrip()
         if not fmt == "Insight Transform File V1.0":
@@ -175,7 +179,7 @@ def read_itk_transform_txt(pth):
             )
         order = int(f.readline().removeprefix("#Transform ").rstrip())
         transform_type = f.readline().removeprefix("Transform: ").rstrip()
-        if not transform_type == "MatrixOffsetTransformBase_double_3_3":
+        if not transform_type in supported_transforms:
             raise ValueError(
                 f"This function does not currently support reading '{transform_type}' trasnforms."
             )
