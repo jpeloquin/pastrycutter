@@ -74,8 +74,16 @@ def _affine_with_cor(A, cor):
     return A
 
 
+def read_itk_affine(pth: Union[str, Path]):
+    """Read ITK or ANTs .mat affine in RAS+ coords"""
+    if pth.suffix == ".mat":
+        return read_affine_mat(pth)
+    else:
+        return read_itk_transform_txt(pth)
+
+
 def read_affine_mat(pth: Union[str, Path]):
-    """Read ANTs affine in RAS coords
+    """Read ANTs affine in RAS+ coords
 
     ANTs uses LPS+; the returned affine is in RAS+.
 
