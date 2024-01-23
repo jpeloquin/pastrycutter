@@ -8,4 +8,4 @@ def augmented(arr):
     Add ones at the end of axis 1.
 
     """
-    return np.vstack([arr, np.ones((1, *arr.shape[1:]))])
+    return np.concatenate([arr, np.ones((1, *arr.shape[1:]))], axis=0)
