@@ -82,7 +82,7 @@ def read_itk_affine(pth: Union[str, Path]):
         return read_itk_transform_txt(pth)
 
 
-def read_affine_mat(pth: Union[str, Path]):
+def read_itk_affine_mat(pth: Union[str, Path]):
     """Read ANTs affine in RAS+ coords
 
     ANTs uses LPS+; the returned affine is in RAS+.
@@ -91,14 +91,14 @@ def read_affine_mat(pth: Union[str, Path]):
     pth = str(pth)
     ants_affine = loadmat(pth)
     if "AffineTransform_double_3_3" in ants_affine:
-        return read_affine_mat_3d(pth)
+        return read_itk_affine_mat_3d(pth)
     elif "AffineTransform_double_2_2" in ants_affine:
-        return read_affine_mat_2d(pth)
+        return read_itk_affine_mat_2d(pth)
     else:
         raise NotImplementedError(f"Affine transform format not supported.")
 
 
-def read_affine_mat_2d(pth: Union[str, Path]):
+def read_itk_affine_mat_2d(pth: Union[str, Path]):
     """Read 2D ANTs affine
 
     ANTs uses LPS+, but that doesn't mean anything in 2D, so the coordinates are
@@ -117,7 +117,7 @@ def read_affine_mat_2d(pth: Union[str, Path]):
     return affine
 
 
-def read_affine_mat_3d(pth: Union[str, Path]):
+def read_itk_affine_mat_3d(pth: Union[str, Path]):
     """Read 3D ANTs affine in RAS coords
 
     ANTs uses LPS+; the returned affine is in RAS+.
