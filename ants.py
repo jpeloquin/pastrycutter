@@ -42,7 +42,7 @@ def env_ants(threads=None):
         raise ValueError(f"The ANTSPATH environment variable is not set.")
     return {
         "ANTSPATH": ANTSPATH,
-        "PATH": f"{ANTSPATH}:{os.getenv('PATH')}",
+        "PATH": f"{ANTSPATH}{os.pathsep}{os.getenv('PATH')}",
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS": str(threads),
     }
 
