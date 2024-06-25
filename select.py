@@ -1,4 +1,5 @@
 """Functions to manipulate bounding boxes and other selections"""
+
 from copy import copy
 
 import numpy as np
