@@ -141,7 +141,7 @@ def read_fcsv(infile):
     with open(infile, "r") as f:
         for i in range(3):
             ln = f.readline()
-    colnames = ln.removeprefix("# columns = ").split(",")
+    colnames = [c.strip() for c in ln.removeprefix("# columns = ").split(",")]
     # Read data
     df = pd.read_csv(infile, skiprows=3, index_col=None, header=None)
     df = df[[i for i in range(len(colnames))]]
