@@ -124,8 +124,8 @@ def read_fcsv(infile):
     df = df[[i for i in range(len(colnames))]]
     df.columns = colnames
     # Switch from LPS to RAS
-    df["x"] = -df["x"]
-    df["y"] = -df["y"]
+    df.loc[:, "x"] = -df["x"]
+    df.loc[:, "y"] = -df["y"]
     return df
 
 
