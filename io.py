@@ -9,8 +9,10 @@ from numpy._typing import NDArray
 from pandas import DataFrame
 from scipy.io import loadmat, savemat
 
+from pastrycutter.util import lps_transformation_affine
 
-def _affine_from_itk(p, cor=None):
+
+def _affine_from_itk_params(p, cor=None):
     """Return affine matrix from ITK parameters list
 
     :param p: List-like of parameters, 12 values.  The first 9 define the upper left
@@ -32,33 +34,6 @@ def _affine_from_itk(p, cor=None):
         return _affine_with_cor(A, cor)
     else:
         return A
-
-
-def _affine_convert_ras_lps(A):
-    """Convert LPS+ affine to RAS+ or vice versa"""
-    # Slower but clearer way to convert LPS → RAS:
-    #
-    # ras_A_lps = np.array([[-1, 0, 0, 0],
-    #                       [0, -1, 0, 0],
-    #                       [0, 0, 1, 0],
-    #                       [0, 0, 0, 1]])
-    # itk_affine = np.array(
-    #     [
-    #         [p[0], p[1], p[2], p[9]],
-    #         [p[3], p[4], p[5], p[10]],
-    #         [p[6], p[7], p[8], p[11]],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
-    # A = ras_A_lps @ itk_affine @ ras_A_lps.T
-    return np.array(
-        [
-            [A[0, 0], A[0, 1], -A[0, 2], -A[0, 3]],
-            [A[1, 0], A[1, 1], -A[1, 2], -A[1, 3]],
-            [-A[2, 0], -A[2, 1], A[2, 2], A[2, 3]],
-            [0, 0, 0, 1],
-        ]
-    )
 
 
 def _affine_with_cor(A, cor):
@@ -129,8 +104,8 @@ def read_itk_affine_mat_3d(pth: Union[str, Path]):
     data = loadmat(pth)
     p = data["AffineTransform_double_3_3"][:, 0]
     c = data["fixed"][:, 0]
-    A = _affine_from_itk(p, c)
-    A = _affine_convert_ras_lps(A)
+    A = _affine_from_itk_params(p, c)
+    A = lps_transformation_affine(A)
     return A
 
 
@@ -201,8 +176,8 @@ def read_itk_transform_txt(pth):
             float(v)
             for v in f.readline().removeprefix("FixedParameters: ").rstrip().split()
         ]
-    A = _affine_from_itk(p, fixed)
-    A = _affine_convert_ras_lps(A)
+    A = _affine_from_itk_params(p, fixed)
+    A = lps_transformation_affine(A)
     return A
 
 
@@ -267,7 +242,7 @@ def write_itk_affine_mat(affine: NDArray, pth: Union[str, Path]):
 
     """
     dim = affine.shape[0] - 1
-    A = _affine_convert_ras_lps(affine)
+    A = lps_transformation_affine(affine)
     serialized = np.hstack([A[:-1, :-1].ravel(), A[:-1, -1]])
     mat = {
         f"AffineTransform_double_{dim}_{dim}": np.atleast_2d(serialized).T,

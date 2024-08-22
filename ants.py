@@ -6,12 +6,29 @@ module provides some supplemental utilities.
 """
 
 import os
+
+import ants
+import numpy as np
 import psutil
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
+
+import nibabel
+
+from pastrycutter.util import itk_directions_from_affine
 
 
 class AntsError(Exception):
     """Raise if ANTs error detected"""
+
+
+def antsimage_from_nibabel(nii: nibabel.Nifti1Image):
+    """Return ANTsImage converted from a nibabel Nifti1Image"""
+    direction, spacing, origin = itk_directions_from_affine(nii.affine)
+    antsimage = ants.from_numpy(
+        nii.get_fdata(), origin=tuple(origin), spacing=tuple(spacing)
+    )
+    antsimage.set_direction(direction)
+    return antsimage
 
 
 def check_ants_log(pth_log):
