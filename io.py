@@ -30,6 +30,8 @@ def _affine_from_itk(p, cor=None):
     )
     if cor is not None:
         return _affine_with_cor(A, cor)
+    else:
+        return A
 
 
 def _affine_convert_ras_lps(A):
