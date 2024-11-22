@@ -48,6 +48,8 @@ def env_ants(threads=None):
 
 def run_ants(cmd, cwd, pth_log, threads=None):
     output = []
+    # TODO: Windows does not allow overriding PATH, so the full executable path must be
+    # provided.
     with Popen(
         cmd,
         stdout=PIPE,
