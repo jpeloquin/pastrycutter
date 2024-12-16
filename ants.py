@@ -110,11 +110,21 @@ def parse_ants_log(pth_log):
     1. Checking if the parameters specified in a script actually propagated to ANTs.
 
     2. Checking if ANTs converged within the allowed number of iterations.
+
+    Currently only supports single-stage registrations.  (Multiple shrink factors exist
+    in one stage.)
+
     """
     d_setup = {}
     stage_lns = []
+    fixed_images = []
+    moving_images = []
     with open(pth_log, "r") as f:
         for ln in f:
+            if ln.startswith("  fixed image"):
+                fixed_images.append(ln.removeprefix("  fixed image: ").rstrip())
+            if ln.startswith("  moving image"):
+                moving_images.append(ln.removeprefix("  moving image: ").rstrip())
             if ln.startswith("Use histogram matching"):
                 d_setup["match_histograms"] = {"true": True, "false": False}[
                     ln.split(" = ")[1].strip()
@@ -129,7 +139,18 @@ def parse_ants_log(pth_log):
                 while ln:
                     stage_lns.append(ln)
                     ln = f.readline().strip()
+
     stage_params = parse_ants_log_stage_lines(stage_lns)
+
+    # Insert fixed and moving image paths into stage parmaeters
+    if not len(fixed_images) == len(moving_images):
+        raise ValueError(
+            f"Found {len(fixed_images)} fixed images but {len(moving_images)} moving images."
+        )
+    for i in range(len(fixed_images)):
+        stage_params["metrics"][i]["fixed_image"] = fixed_images[i]
+        stage_params["metrics"][i]["moving_image"] = moving_images[i]
+
     return {"setup": d_setup, "stages": [stage_params]}
 
 
